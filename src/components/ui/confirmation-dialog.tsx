@@ -45,9 +45,15 @@ export function ConfirmationDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelText}</AlertDialogCancel>
-          <AlertDialogActionDestructive onClick={handleConfirm}>
-            {confirmText}
-          </AlertDialogActionDestructive>
+          {variant === "destructive" ? (
+            <AlertDialogActionDestructive onClick={handleConfirm}>
+              {confirmText}
+            </AlertDialogActionDestructive>
+          ) : (
+            <AlertDialogAction onClick={handleConfirm}>
+              {confirmText}
+            </AlertDialogAction>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

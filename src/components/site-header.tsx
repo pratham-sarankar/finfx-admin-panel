@@ -1,24 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "react-router-dom";
 import { LogOut, User } from "lucide-react";
+import { useState } from "react";
 
 export function SiteHeader() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -51,37 +43,30 @@ export function SiteHeader() {
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">{user.email}</span>
               </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-2">Logout</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to logout? You will need to log in
-                      again to access the dashboard.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>
-                      Logout
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setLogoutDialogOpen(true)}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Logout</span>
+              </Button>
             </div>
           )}
         </div>
       </div>
+
+      <ConfirmationDialog
+        open={logoutDialogOpen}
+        onOpenChange={setLogoutDialogOpen}
+        title="Confirm Logout"
+        description="Are you sure you want to logout? You will need to log in again to access the dashboard."
+        confirmText="Logout"
+        cancelText="Cancel"
+        onConfirm={handleLogout}
+        variant="destructive"
+      />
     </header>
   );
 }
