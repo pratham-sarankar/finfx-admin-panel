@@ -72,7 +72,7 @@ const combinedSchema = z.object({
 });
 
 const createColumns = (
-  onEdit: (user: User) => void, 
+  onEdit: (user: User) => void,
   onDelete: (user: User) => void
 ): ColumnDef<z.infer<typeof combinedSchema>>[] => [
   {
@@ -131,7 +131,7 @@ const createColumns = (
     id: "actions",
     cell: ({ row }) => {
       const user = row.original as User;
-      
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -149,8 +149,8 @@ const createColumns = (
               Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="text-red-600 focus:text-red-600"
+            <DropdownMenuItem
+              variant="destructive"
               onClick={() => onDelete(user)}
             >
               Delete
@@ -170,14 +170,14 @@ interface UserFormData {
 }
 
 // AddUserDrawer component for adding/editing users
-function AddUserDrawer({ 
-  user, 
-  onUserAdded, 
-  onUserUpdated, 
-  onClose 
-}: { 
-  user?: User | null; 
-  onUserAdded?: () => void; 
+function AddUserDrawer({
+  user,
+  onUserAdded,
+  onUserUpdated,
+  onClose,
+}: {
+  user?: User | null;
+  onUserAdded?: () => void;
   onUserUpdated?: () => void;
   onClose?: () => void;
 }) {
@@ -218,12 +218,12 @@ function AddUserDrawer({
   };
 
   const handleInputChange = (field: keyof UserFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.fullName || !formData.email || !formData.phoneNumber) {
       toast.error("Please fill in all required fields");
       return;
@@ -243,7 +243,7 @@ function AddUserDrawer({
           email: formData.email,
           phoneNumber: formData.phoneNumber,
         };
-        
+
         if (formData.password.trim()) {
           updateData.password = formData.password;
         }
@@ -273,7 +273,11 @@ function AddUserDrawer({
   };
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"} open={open} onOpenChange={setOpen}>
+    <Drawer
+      direction={isMobile ? "bottom" : "right"}
+      open={open}
+      onOpenChange={setOpen}
+    >
       <DrawerTrigger asChild>
         <Button variant="outline" size="sm">
           <IconPlus />
@@ -284,19 +288,18 @@ function AddUserDrawer({
         <DrawerHeader className="gap-1">
           <DrawerTitle>{isEdit ? "Edit User" : "Add New User"}</DrawerTitle>
           <DrawerDescription>
-            {isEdit 
-              ? "Update the user account information" 
-              : "Create a new user account with the required information"
-            }
+            {isEdit
+              ? "Update the user account information"
+              : "Create a new user account with the required information"}
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
               <Label htmlFor="fullName">Full Name *</Label>
-              <Input 
-                id="fullName" 
-                placeholder="Enter full name" 
+              <Input
+                id="fullName"
+                placeholder="Enter full name"
                 value={formData.fullName}
                 onChange={(e) => handleInputChange("fullName", e.target.value)}
                 required
@@ -315,12 +318,14 @@ function AddUserDrawer({
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="phone">Phone Number *</Label>
-              <Input 
-                id="phone" 
-                type="tel" 
-                placeholder="Enter phone number" 
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Enter phone number"
                 value={formData.phoneNumber}
-                onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("phoneNumber", e.target.value)
+                }
                 required
               />
             </div>
@@ -328,9 +333,9 @@ function AddUserDrawer({
               <Label htmlFor="password">
                 Password {isEdit ? "(Leave empty to keep current)" : "*"}
               </Label>
-              <Input 
-                id="password" 
-                type="password" 
+              <Input
+                id="password"
+                type="password"
                 placeholder={isEdit ? "Enter new password" : "Enter password"}
                 value={formData.password}
                 onChange={(e) => handleInputChange("password", e.target.value)}
@@ -346,12 +351,16 @@ function AddUserDrawer({
                 <IconLoader className="mr-2 h-4 w-4 animate-spin" />
                 {isEdit ? "Updating..." : "Creating..."}
               </>
+            ) : isEdit ? (
+              "Update User"
             ) : (
-              isEdit ? "Update User" : "Create User"
+              "Create User"
             )}
           </Button>
           <DrawerClose asChild>
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
@@ -371,7 +380,8 @@ export function UsersDataTable() {
   const [totalUsers, setTotalUsers] = React.useState(0);
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [showMultiDeleteConfirm, setShowMultiDeleteConfirm] = React.useState(false);
+  const [showMultiDeleteConfirm, setShowMultiDeleteConfirm] =
+    React.useState(false);
   const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
@@ -446,7 +456,9 @@ export function UsersDataTable() {
       setRowSelection({});
       fetchUsers(pagination.pageIndex, pagination.pageSize);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete user");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete user"
+      );
     } finally {
       setDeleting(false);
       setUserToDelete(null);
@@ -459,7 +471,7 @@ export function UsersDataTable() {
 
   const confirmMultiDelete = async () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
-    const selectedIds = selectedRows.map(row => row.original.id.toString());
+    const selectedIds = selectedRows.map((row) => row.original.id.toString());
 
     if (selectedIds.length === 0) return;
 
@@ -471,7 +483,9 @@ export function UsersDataTable() {
       setRowSelection({});
       fetchUsers(pagination.pageIndex, pagination.pageSize);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete users");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete users"
+      );
     } finally {
       setDeleting(false);
     }
@@ -509,11 +523,10 @@ export function UsersDataTable() {
         <div className="flex items-center gap-2">
           {selectedCount > 0 && (
             <Button
-              variant="outline"
+              variant="destructive"
               size="sm"
               onClick={handleMultiDelete}
               disabled={deleting}
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
             >
               {deleting ? (
                 <IconLoader className="mr-2 h-4 w-4 animate-spin" />
@@ -525,8 +538,8 @@ export function UsersDataTable() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <AddUserDrawer 
-            user={editingUser} 
+          <AddUserDrawer
+            user={editingUser}
             onUserAdded={handleUserAdded}
             onUserUpdated={handleUserUpdated}
             onClose={() => setEditingUser(null)}

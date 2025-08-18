@@ -1,6 +1,7 @@
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogActionDestructive,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -44,16 +45,9 @@ export function ConfirmationDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            className={
-              variant === "destructive"
-                ? "bg-red-600 text-white hover:bg-red-700"
-                : ""
-            }
-          >
+          <AlertDialogActionDestructive onClick={handleConfirm}>
             {confirmText}
-          </AlertDialogAction>
+          </AlertDialogActionDestructive>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
