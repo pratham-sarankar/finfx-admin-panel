@@ -1,69 +1,169 @@
-# React + TypeScript + Vite
+# FinFX Admin Panel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern React-based administrative dashboard for FinFX, built with TypeScript, Vite, and Tailwind CSS. This application provides comprehensive user management capabilities with a clean, responsive interface.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### User Management
+- **Complete CRUD Operations**: Create, read, update, and delete users
+- **Bulk Operations**: Select and delete multiple users at once
+- **Real-time Validation**: Form validation with proper error handling
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
-## Expanding the ESLint configuration
+### Modern Tech Stack
+- **React 19** with TypeScript for type safety
+- **Vite** for fast development and building
+- **Tailwind CSS** for styling
+- **Radix UI** components for accessibility
+- **React Router DOM** for navigation
+- **Sonner** for toast notifications
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ Getting Started
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
+- Node.js (version 18 or higher)
+- npm, yarn, or pnpm package manager
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/pratham-sarankar/finfx-admin-panel.git
+   cd finfx-admin-panel
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
+
+3. **Environment Setup**
+   
+   Create a `.env` file in the root directory (optional):
+   ```env
+   VITE_API_BASE_URL=https://finfx-backend-dev.onrender.com/dev
+   ```
+   
+   **Note**: If you don't set this environment variable, the application will automatically use the development server URL.
+
+### Development
+
+Start the development server:
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The application will be available at `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Building for Production
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Build the application:
+```bash
+npm run build
+# or
+yarn build
+# or
+pnpm build
 ```
+
+Preview the production build:
+```bash
+npm run preview
+# or
+yarn preview
+# or
+pnpm preview
+```
+
+### Linting
+
+Run ESLint to check code quality:
+```bash
+npm run lint
+# or
+yarn lint
+# or
+pnpm lint
+```
+
+## 🔗 Backend Integration
+
+This application integrates with the FinFX backend development server:
+
+**Base URL**: `https://finfx-backend-dev.onrender.com/dev`
+
+### API Endpoints
+- `POST /users` - Create new user
+- `GET /users` - List users with pagination
+- `GET /users/:id` - Get single user details
+- `PUT /users/:id` - Update existing user
+- `DELETE /users/:id` - Delete user
+
+### Authentication
+The application uses JWT-based authentication through:
+- `POST /auth/login` - User login
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # Base UI components (buttons, dialogs, etc.)
+│   └── ...             # Feature-specific components
+├── config/             # Application configuration
+│   └── api.ts          # API configuration and endpoints
+├── lib/                # Utility functions and helpers
+├── pages/              # Page components
+├── services/           # API service layers
+├── types/              # TypeScript type definitions
+└── ...
+```
+
+## 🎨 UI Components
+
+The application uses a combination of:
+- **Radix UI** primitives for accessibility
+- **Tailwind CSS** for styling
+- **Lucide React** and **Tabler Icons** for icons
+- **Custom components** built with shadcn/ui patterns
+
+## 🔧 Configuration
+
+### Environment Variables
+- `VITE_API_BASE_URL`: Override the default backend URL
+
+### Customization
+- Modify `src/config/api.ts` to change API endpoints
+- Update Tailwind configuration in `tailwind.config.js`
+- Adjust TypeScript settings in `tsconfig.json`
+
+## 📱 Responsive Design
+
+The application is fully responsive and optimized for:
+- Desktop (1024px and above)
+- Tablet (768px - 1023px)
+- Mobile (below 768px)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is private and proprietary to FinFX.
+
+## 📞 Support
+
+For support and questions, please contact the development team or create an issue in the repository.

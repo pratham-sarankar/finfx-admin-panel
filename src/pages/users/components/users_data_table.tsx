@@ -7,6 +7,7 @@ import {
   IconDotsVertical,
   IconLoader,
   IconPlus,
+  IconTrash,
 } from "@tabler/icons-react";
 import {
   type ColumnDef,
@@ -57,28 +58,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getApiUrl } from "@/config/api";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-// Schema for the users API response
-const userSchema = z.object({
-  id: z.string(),
-  email: z.string(),
-  fullName: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  isEmailVerified: z.boolean(),
-  isPhoneVerified: z.boolean(),
-});
-
-const usersApiResponseSchema = z.object({
-  success: z.boolean(),
-  data: z.array(userSchema),
-  page: z.number(),
-  perPage: z.number(),
-  totalPages: z.number(),
-  totalUsers: z.number(),
-});
+import { UserService } from "@/services/user";
+import type { User, CreateUserRequest, UpdateUserRequest } from "@/types/user";
 
 // Combined schema for the table that includes user data from API
 const combinedSchema = z.object({
@@ -88,7 +71,10 @@ const combinedSchema = z.object({
   status: z.string().optional(),
 });
 
-const columns: ColumnDef<z.infer<typeof combinedSchema>>[] = [
+const createColumns = (
+  onEdit: (user: User) => void,
+  onDelete: (user: User) => void
+): ColumnDef<z.infer<typeof combinedSchema>>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -118,7 +104,7 @@ const columns: ColumnDef<z.infer<typeof combinedSchema>>[] = [
   // New user columns at the beginning
   {
     accessorKey: "fullName",
-    header: "Full",
+    header: "Full Name",
     cell: ({ row }) => row.original.fullName || "-",
     enableHiding: false,
   },
@@ -131,7 +117,7 @@ const columns: ColumnDef<z.infer<typeof combinedSchema>>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
+    cell: () => (
       <Badge
         variant="outline"
         className="text-green-600 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950"
@@ -143,34 +129,155 @@ const columns: ColumnDef<z.infer<typeof combinedSchema>>[] = [
   },
   {
     id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <IconDotsVertical />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => {
+      const user = row.original as User;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+              size="icon"
+            >
+              <IconDotsVertical />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-32">
+            <DropdownMenuItem onClick={() => onEdit(user)}>
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => onDelete(user)}
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
   },
 ];
 
-// AddUserDrawer component for adding new users
-function AddUserDrawer() {
+interface UserFormData {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+}
+
+// AddUserDrawer component for adding/editing users
+function AddUserDrawer({
+  user,
+  onUserAdded,
+  onUserUpdated,
+  onClose,
+}: {
+  user?: User | null;
+  onUserAdded?: () => void;
+  onUserUpdated?: () => void;
+  onClose?: () => void;
+}) {
   const isMobile = useIsMobile();
+  const [open, setOpen] = React.useState(false);
+  const [formData, setFormData] = React.useState<UserFormData>({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    password: "",
+  });
+  const [loading, setLoading] = React.useState(false);
+
+  const isEdit = !!user;
+
+  // Pre-fill form when editing
+  React.useEffect(() => {
+    if (user) {
+      setFormData({
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber || "",
+        password: "",
+      });
+      setOpen(true);
+    }
+  }, [user]);
+
+  const handleClose = () => {
+    setOpen(false);
+    setFormData({
+      fullName: "",
+      email: "",
+      phoneNumber: "",
+      password: "",
+    });
+    onClose?.();
+  };
+
+  const handleInputChange = (field: keyof UserFormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.fullName || !formData.email || !formData.phoneNumber) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!isEdit && !formData.password) {
+      toast.error("Password is required for new users");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (isEdit && user) {
+        const updateData: UpdateUserRequest = {
+          fullName: formData.fullName,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+        };
+
+        if (formData.password.trim()) {
+          updateData.password = formData.password;
+        }
+
+        await UserService.updateUser(user.id, updateData);
+        toast.success("User updated successfully");
+        onUserUpdated?.();
+      } else {
+        const createData: CreateUserRequest = {
+          fullName: formData.fullName,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          password: formData.password,
+        };
+
+        await UserService.createUser(createData);
+        toast.success("User created successfully");
+        onUserAdded?.();
+      }
+
+      handleClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
+    <Drawer
+      direction={isMobile ? "bottom" : "right"}
+      open={open}
+      onOpenChange={setOpen}
+    >
       <DrawerTrigger asChild>
         <Button variant="outline" size="sm">
           <IconPlus />
@@ -179,63 +286,81 @@ function AddUserDrawer() {
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
-          <DrawerTitle>Add New User</DrawerTitle>
+          <DrawerTitle>{isEdit ? "Edit User" : "Add New User"}</DrawerTitle>
           <DrawerDescription>
-            Create a new user account with the required information
+            {isEdit
+              ? "Update the user account information"
+              : "Create a new user account with the required information"}
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-          <form className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" placeholder="Enter full name" />
+              <Label htmlFor="fullName">Full Name *</Label>
+              <Input
+                id="fullName"
+                placeholder="Enter full name"
+                value={formData.fullName}
+                onChange={(e) => handleInputChange("fullName", e.target.value)}
+                required
+              />
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="Enter email address"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                required
               />
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" placeholder="Enter phone number" />
+              <Label htmlFor="phone">Phone Number *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Enter phone number"
+                value={formData.phoneNumber}
+                onChange={(e) =>
+                  handleInputChange("phoneNumber", e.target.value)
+                }
+                required
+              />
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="role">Role</Label>
-              <Select>
-                <SelectTrigger id="role" className="w-full">
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="department">Department</Label>
-              <Select>
-                <SelectTrigger id="department" className="w-full">
-                  <SelectValue placeholder="Select a department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="engineering">Engineering</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="sales">Sales</SelectItem>
-                  <SelectItem value="hr">Human Resources</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="password">
+                Password {isEdit ? "(Leave empty to keep current)" : "*"}
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder={isEdit ? "Enter new password" : "Enter password"}
+                value={formData.password}
+                onChange={(e) => handleInputChange("password", e.target.value)}
+                required={!isEdit}
+              />
             </div>
           </form>
         </div>
         <DrawerFooter>
-          <Button>Create User</Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? (
+              <>
+                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
+                {isEdit ? "Updating..." : "Creating..."}
+              </>
+            ) : isEdit ? (
+              "Update User"
+            ) : (
+              "Create User"
+            )}
+          </Button>
           <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
@@ -253,36 +378,29 @@ export function UsersDataTable() {
   const [loading, setLoading] = React.useState(true);
   const [totalPages, setTotalPages] = React.useState(1);
   const [totalUsers, setTotalUsers] = React.useState(0);
+  const [editingUser, setEditingUser] = React.useState<User | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [showMultiDeleteConfirm, setShowMultiDeleteConfirm] =
+    React.useState(false);
+  const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   // Fetch users from API
   const fetchUsers = React.useCallback(
     async (page: number, pageSize: number) => {
       setLoading(true);
       try {
-        const response = await fetch(
-          `${getApiUrl("/users")}?n=${pageSize}&p=${page + 1}`
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        const parsedResult = usersApiResponseSchema.parse(result);
+        const result = await UserService.getUsers(page + 1, pageSize);
 
         // Transform API data to match combined schema
-        const transformedData = parsedResult.data.map(
-          (user: z.infer<typeof userSchema>) => ({
-            id: user.id,
-            fullName: user.fullName,
-            email: user.email,
-            status: "Active",
-          })
-        );
+        const transformedData = result.data.map((user: User) => ({
+          ...user,
+          status: "Active",
+        }));
 
         setData(transformedData);
-        setTotalPages(parsedResult.totalPages);
-        setTotalUsers(parsedResult.totalUsers);
+        setTotalPages(result.totalPages);
+        setTotalUsers(result.totalUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
         toast.error("Failed to fetch users");
@@ -305,6 +423,79 @@ export function UsersDataTable() {
     fetchUsers(0, 10);
   }, [fetchUsers]);
 
+  const handleUserAdded = () => {
+    // Clear selection and refresh data
+    setRowSelection({});
+    fetchUsers(pagination.pageIndex, pagination.pageSize);
+  };
+
+  const handleUserUpdated = () => {
+    setEditingUser(null);
+    // Clear selection and refresh data
+    setRowSelection({});
+    fetchUsers(pagination.pageIndex, pagination.pageSize);
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    setDeleting(true);
+    try {
+      await UserService.deleteUser(userToDelete.id);
+      toast.success("User deleted successfully");
+      // Clear selection and refresh data
+      setRowSelection({});
+      fetchUsers(pagination.pageIndex, pagination.pageSize);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete user"
+      );
+    } finally {
+      setDeleting(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleMultiDelete = () => {
+    setShowMultiDeleteConfirm(true);
+  };
+
+  const confirmMultiDelete = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedIds = selectedRows.map((row) => row.original.id.toString());
+
+    if (selectedIds.length === 0) return;
+
+    setDeleting(true);
+    try {
+      await UserService.deleteMultipleUsers(selectedIds);
+      toast.success(`${selectedIds.length} user(s) deleted successfully`);
+      // Clear selection and refresh data
+      setRowSelection({});
+      fetchUsers(pagination.pageIndex, pagination.pageSize);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete users"
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const columns = React.useMemo(
+    () => createColumns(handleEditUser, handleDeleteUser),
+    []
+  );
+
   const table = useReactTable({
     data,
     columns,
@@ -324,10 +515,36 @@ export function UsersDataTable() {
     pageCount: totalPages,
   });
 
+  const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+
   return (
     <div className="w-full flex-col justify-start gap-6">
-      <div className="flex items-center justify-end px-4 py-2 lg:px-6">
-        <AddUserDrawer />
+      <div className="flex items-center justify-between px-4 py-2 lg:px-6">
+        <div className="flex items-center gap-2">
+          {selectedCount > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleMultiDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <IconTrash className="mr-2 h-4 w-4" />
+              )}
+              Delete Selected ({selectedCount})
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <AddUserDrawer
+            user={editingUser}
+            onUserAdded={handleUserAdded}
+            onUserUpdated={handleUserUpdated}
+            onClose={() => setEditingUser(null)}
+          />
+        </div>
       </div>
       <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         <div className="overflow-hidden rounded-lg border">
@@ -469,6 +686,29 @@ export function UsersDataTable() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete User"
+        description={`Are you sure you want to delete "${userToDelete?.fullName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteUser}
+        variant="destructive"
+      />
+
+      <ConfirmationDialog
+        open={showMultiDeleteConfirm}
+        onOpenChange={setShowMultiDeleteConfirm}
+        title="Delete Multiple Users"
+        description={`Are you sure you want to delete ${selectedCount} selected user(s)? This action cannot be undone.`}
+        confirmText="Delete All"
+        cancelText="Cancel"
+        onConfirm={confirmMultiDelete}
+        variant="destructive"
+      />
     </div>
   );
 }
