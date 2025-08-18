@@ -16,6 +16,7 @@ import type { LoginRequest } from "@/types/auth";
 import { useAuth } from "@/contexts/auth-context";
 import { useAuthNavigation } from "@/hooks/use-auth-navigation";
 import { toast } from "sonner";
+import { MOCK_LOGIN_RESPONSE } from "@/lib/dev-utils";
 
 export function LoginForm({
   className,
@@ -62,6 +63,18 @@ export function LoginForm({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDevLogin = () => {
+    // Use mock login response for development mode
+    login(MOCK_LOGIN_RESPONSE);
+
+    toast.success("Development Login", {
+      description: "Logged in with mock data for demonstration",
+    });
+
+    // Navigate to intended destination or dashboard
+    redirectToIntended();
   };
 
   return (
@@ -122,6 +135,18 @@ export function LoginForm({
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
+                
+                {import.meta.env.DEV && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleDevLogin}
+                    disabled={isLoading}
+                  >
+                    Dev Login (Demo Mode)
+                  </Button>
+                )}
               </div>
             </div>
           </form>
