@@ -131,7 +131,7 @@ const columns: ColumnDef<z.infer<typeof combinedSchema>>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
+    cell: () => (
       <Badge
         variant="outline"
         className="text-green-600 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950"
