@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "./protected-route";
 import { PublicRoute } from "./public-route";
@@ -21,7 +21,7 @@ export function AppRouter() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* Public routes - only accessible to unauthenticated users */}
         <Route
@@ -49,6 +49,6 @@ export function AppRouter() {
         {/* Catch all route - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
