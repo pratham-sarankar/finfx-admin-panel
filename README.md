@@ -2,6 +2,15 @@
 
 A modern React-based administrative dashboard for FinFX, built with TypeScript, Vite, and Tailwind CSS. This application provides comprehensive user management capabilities with a clean, responsive interface.
 
+## 🌐 Live Demo
+
+You can access the live version of the FinFX Admin Panel at:  
+[https://finfx-dashboard.sarankar.com/](https://finfx-dashboard.sarankar.com/)
+
+To log in and explore the demo, use the following credentials:  
+- **Email:** [test@yopmail.com](mailto:test@yopmail.com)  
+- **Password:** test@123
+
 ## 🚀 Features
 
 ### User Management
