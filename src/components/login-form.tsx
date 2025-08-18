@@ -54,10 +54,10 @@ export function LoginForm({
 
       // Navigate to intended destination or dashboard
       redirectToIntended();
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Show error toast
       toast.error("Login Failed", {
-        description: err.message || "An error occurred during login.",
+        description: err instanceof Error ? err.message : "An error occurred during login.",
       });
     } finally {
       setIsLoading(false);
