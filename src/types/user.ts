@@ -43,6 +43,16 @@ export interface DeleteUserResponse {
   message: string;
 }
 
+export interface DeleteMultipleUsersResponse {
+  success: boolean;
+  message: string;
+  data: {
+    deletedCount: number;
+    requestedCount: number;
+    notFoundCount: number;
+  };
+}
+
 export interface ApiError {
   message: string;
   status?: number;
