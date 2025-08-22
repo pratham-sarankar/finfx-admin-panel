@@ -86,7 +86,14 @@ export class UserService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      
+      // Check if the backend indicates the operation was successful
+      if (!result.success) {
+        throw new Error(result.message || "Failed to create user");
+      }
+
+      return result;
     } catch (error) {
       const apiError: ApiError = {
         message:
@@ -113,7 +120,14 @@ export class UserService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      
+      // Check if the backend indicates the operation was successful
+      if (!result.success) {
+        throw new Error(result.message || "Failed to update user");
+      }
+
+      return result;
     } catch (error) {
       const apiError: ApiError = {
         message:
