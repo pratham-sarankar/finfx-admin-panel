@@ -4,6 +4,7 @@ import type {
   UsersApiResponse, 
   UserApiResponse, 
   DeleteUserResponse,
+  DeleteMultipleUsersResponse,
   ApiError 
 } from "@/types/user";
 import { getApiUrl, API_CONFIG } from "@/config/api";
@@ -150,19 +151,30 @@ export class UserService {
     }
   }
 
-  static async deleteMultipleUsers(ids: string[]): Promise<void> {
-    const errors: string[] = [];
-    
-    for (const id of ids) {
-      try {
-        await this.deleteUser(id);
-      } catch (error) {
-        errors.push(`Failed to delete user ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    }
+  static async deleteMultipleUsers(ids: string[]): Promise<DeleteMultipleUsersResponse> {
+    try {
+      const response = await fetch(
+        getApiUrl(API_CONFIG.ENDPOINTS.USERS),
+        {
+          method: "DELETE",
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify({ userIds: ids }),
+        }
+      );
 
-    if (errors.length > 0) {
-      throw new Error(errors.join(', '));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      const apiError: ApiError = {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete multiple users",
+      };
+      throw apiError;
     }
   }
 }

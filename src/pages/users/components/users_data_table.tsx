@@ -477,8 +477,8 @@ export function UsersDataTable() {
 
     setDeleting(true);
     try {
-      await UserService.deleteMultipleUsers(selectedIds);
-      toast.success(`${selectedIds.length} user(s) deleted successfully`);
+      const response = await UserService.deleteMultipleUsers(selectedIds);
+      toast.success(response.message);
       // Clear selection and refresh data
       setRowSelection({});
       fetchUsers(pagination.pageIndex, pagination.pageSize);
@@ -488,6 +488,7 @@ export function UsersDataTable() {
       );
     } finally {
       setDeleting(false);
+      setShowMultiDeleteConfirm(false);
     }
   };
 

@@ -114,7 +114,8 @@ This application integrates with the FinFX backend development server:
 - `GET /users` - List users with pagination
 - `GET /users/:id` - Get single user details
 - `PUT /users/:id` - Update existing user
-- `DELETE /users/:id` - Delete user
+- `DELETE /users/:id` - Delete single user
+- `DELETE /users` - Delete multiple users (bulk delete with `userIds` array)
 
 ### Authentication
 The application uses JWT-based authentication through:
