@@ -68,6 +68,7 @@ type CombinedUser = {
   id: string | number;
   fullName?: string;
   email?: string;
+  phoneNumber?: string;
   status?: string;
 };
 
@@ -112,6 +113,12 @@ const createColumns = (
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => row.original.email || "-",
+    enableHiding: false,
+  },
+  {
+    accessorKey: "phoneNumber",
+    header: "Phone Number",
+    cell: ({ row }) => row.original.phoneNumber || "-",
     enableHiding: false,
   },
   {
@@ -266,7 +273,8 @@ function AddUserDrawer({
 
       handleClose();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to create user.";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create user.";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -428,13 +436,18 @@ export function UsersDataTable() {
   // Fetch users when pagination or search changes
   React.useEffect(() => {
     fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
-  }, [pagination.pageIndex, pagination.pageSize, debouncedSearchQuery, fetchUsers]);
+  }, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    debouncedSearchQuery,
+    fetchUsers,
+  ]);
 
   // Reset to first page when search changes
   React.useEffect(() => {
     if (debouncedSearchQuery !== searchQuery) return; // Avoid double fetch during debounce
     if (pagination.pageIndex !== 0) {
-      setPagination(prev => ({ ...prev, pageIndex: 0 }));
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     }
   }, [debouncedSearchQuery, pagination.pageIndex, searchQuery]);
 
@@ -474,7 +487,11 @@ export function UsersDataTable() {
       toast.success("User deleted successfully");
       // Clear selection and refresh data
       setRowSelection({});
-      fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
+      fetchUsers(
+        pagination.pageIndex,
+        pagination.pageSize,
+        debouncedSearchQuery
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete user"
@@ -501,7 +518,11 @@ export function UsersDataTable() {
       toast.success(response.message);
       // Clear selection and refresh data
       setRowSelection({});
-      fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
+      fetchUsers(
+        pagination.pageIndex,
+        pagination.pageSize,
+        debouncedSearchQuery
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete users"
