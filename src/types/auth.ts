@@ -11,6 +11,7 @@ export interface LoginResponse {
     fullName: string;
     email: string;
     isEmailVerified: boolean;
+    role: string;
   };
 }
 
