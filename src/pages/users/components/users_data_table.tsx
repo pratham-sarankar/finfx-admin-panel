@@ -68,6 +68,7 @@ const combinedSchema = z.object({
   id: z.union([z.string(), z.number()]),
   fullName: z.string().optional(),
   email: z.string().optional(),
+  phoneNumber: z.string().optional(),
   status: z.string().optional(),
 });
 
@@ -112,6 +113,12 @@ const createColumns = (
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => row.original.email || "-",
+    enableHiding: false,
+  },
+  {
+    accessorKey: "phoneNumber",
+    header: "Phone Number",
+    cell: ({ row }) => row.original.phoneNumber || "-",
     enableHiding: false,
   },
   {
