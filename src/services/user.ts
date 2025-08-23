@@ -21,11 +21,21 @@ export class UserService {
 
   static async getUsers(
     page: number = 1,
-    perPage: number = 10
+    perPage: number = 10,
+    query?: string
   ): Promise<UsersApiResponse> {
     try {
+      const searchParams = new URLSearchParams({
+        n: perPage.toString(),
+        p: page.toString(),
+      });
+      
+      if (query && query.trim()) {
+        searchParams.append('q', query.trim());
+      }
+      
       const response = await fetch(
-        `${getApiUrl(API_CONFIG.ENDPOINTS.USERS)}?n=${perPage}&p=${page}`,
+        `${getApiUrl(API_CONFIG.ENDPOINTS.USERS)}?${searchParams.toString()}`,
         {
           method: "GET",
           headers: this.getAuthHeaders(),

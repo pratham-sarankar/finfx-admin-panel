@@ -7,6 +7,7 @@ import {
   IconDotsVertical,
   IconLoader,
   IconPlus,
+  IconSearch,
   IconTrash,
 } from "@tabler/icons-react";
 import {
@@ -19,7 +20,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,19 +63,19 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { UserService } from "@/services/user";
 import type { User, CreateUserRequest, UpdateUserRequest } from "@/types/user";
 
-// Combined schema for the table that includes user data from API
-const combinedSchema = z.object({
-  id: z.union([z.string(), z.number()]),
-  fullName: z.string().optional(),
-  email: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  status: z.string().optional(),
-});
+// Type for the table that includes user data from API with status
+type CombinedUser = {
+  id: string | number;
+  fullName?: string;
+  email?: string;
+  phoneNumber?: string;
+  status?: string;
+};
 
 const createColumns = (
   onEdit: (user: User) => void,
   onDelete: (user: User) => void
-): ColumnDef<z.infer<typeof combinedSchema>>[] => [
+): ColumnDef<CombinedUser>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -272,8 +272,10 @@ function AddUserDrawer({
       }
 
       handleClose();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create user.");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create user.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -376,7 +378,7 @@ function AddUserDrawer({
 }
 
 export function UsersDataTable() {
-  const [data, setData] = React.useState<z.infer<typeof combinedSchema>[]>([]);
+  const [data, setData] = React.useState<CombinedUser[]>([]);
   const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
@@ -391,13 +393,24 @@ export function UsersDataTable() {
     React.useState(false);
   const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState("");
+
+  // Debounce search query
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Fetch users from API
   const fetchUsers = React.useCallback(
-    async (page: number, pageSize: number) => {
+    async (page: number, pageSize: number, query?: string) => {
       setLoading(true);
       try {
-        const result = await UserService.getUsers(page + 1, pageSize);
+        const result = await UserService.getUsers(page + 1, pageSize, query);
 
         // Transform API data to match combined schema
         const transformedData = result.data.map((user: User) => ({
@@ -420,10 +433,23 @@ export function UsersDataTable() {
     []
   );
 
-  // Fetch users when pagination changes
+  // Fetch users when pagination or search changes
   React.useEffect(() => {
-    fetchUsers(pagination.pageIndex, pagination.pageSize);
-  }, [pagination.pageIndex, pagination.pageSize, fetchUsers]);
+    fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
+  }, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    debouncedSearchQuery,
+    fetchUsers,
+  ]);
+
+  // Reset to first page when search changes
+  React.useEffect(() => {
+    if (debouncedSearchQuery !== searchQuery) return; // Avoid double fetch during debounce
+    if (pagination.pageIndex !== 0) {
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    }
+  }, [debouncedSearchQuery, pagination.pageIndex, searchQuery]);
 
   // Initial data fetch
   React.useEffect(() => {
@@ -433,14 +459,14 @@ export function UsersDataTable() {
   const handleUserAdded = () => {
     // Clear selection and refresh data
     setRowSelection({});
-    fetchUsers(pagination.pageIndex, pagination.pageSize);
+    fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
   };
 
   const handleUserUpdated = () => {
     setEditingUser(null);
     // Clear selection and refresh data
     setRowSelection({});
-    fetchUsers(pagination.pageIndex, pagination.pageSize);
+    fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
   };
 
   const handleEditUser = (user: User) => {
@@ -461,7 +487,11 @@ export function UsersDataTable() {
       toast.success("User deleted successfully");
       // Clear selection and refresh data
       setRowSelection({});
-      fetchUsers(pagination.pageIndex, pagination.pageSize);
+      fetchUsers(
+        pagination.pageIndex,
+        pagination.pageSize,
+        debouncedSearchQuery
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete user"
@@ -488,7 +518,11 @@ export function UsersDataTable() {
       toast.success(response.message);
       // Clear selection and refresh data
       setRowSelection({});
-      fetchUsers(pagination.pageIndex, pagination.pageSize);
+      fetchUsers(
+        pagination.pageIndex,
+        pagination.pageSize,
+        debouncedSearchQuery
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete users"
@@ -546,6 +580,15 @@ export function UsersDataTable() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-8"
+            />
+          </div>
           <AddUserDrawer
             user={editingUser}
             onUserAdded={handleUserAdded}
