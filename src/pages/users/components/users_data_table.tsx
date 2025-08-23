@@ -265,8 +265,8 @@ function AddUserDrawer({
       }
 
       handleClose();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An error occurred");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create user.");
     } finally {
       setLoading(false);
     }
