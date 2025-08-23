@@ -7,6 +7,8 @@ export interface User {
   updatedAt: string;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
+  status: "active" | "inactive" | "suspended";
+  role: "admin" | "user" | "manager" | "support";
 }
 
 export interface CreateUserRequest {
@@ -14,6 +16,8 @@ export interface CreateUserRequest {
   email: string;
   phoneNumber: string;
   password: string;
+  status: "active" | "inactive" | "suspended";
+  role: "admin" | "user" | "manager" | "support";
 }
 
 export interface UpdateUserRequest {
@@ -21,6 +25,8 @@ export interface UpdateUserRequest {
   email: string;
   phoneNumber: string;
   password?: string;
+  status?: "active" | "inactive" | "suspended";
+  role?: "admin" | "user" | "manager" | "support";
 }
 
 export interface UsersApiResponse {

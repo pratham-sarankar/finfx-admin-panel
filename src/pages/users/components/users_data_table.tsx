@@ -69,7 +69,8 @@ type CombinedUser = {
   fullName?: string;
   email?: string;
   phoneNumber?: string;
-  status?: string;
+  status?: "active" | "inactive" | "suspended";
+  role?: "admin" | "user" | "manager" | "support";
 };
 
 const createColumns = (
@@ -122,16 +123,48 @@ const createColumns = (
     enableHiding: false,
   },
   {
+    accessorKey: "role",
+    header: "Role",
+    cell: ({ row }) => {
+      const user = row.original as User;
+      const roleColors = {
+        admin: "text-red-600 border-red-200 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950",
+        manager: "text-blue-600 border-blue-200 bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:bg-blue-950",
+        support: "text-purple-600 border-purple-200 bg-purple-50 dark:text-purple-400 dark:border-purple-800 dark:bg-purple-950",
+        user: "text-gray-600 border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-800 dark:bg-gray-950"
+      };
+      
+      return (
+        <Badge
+          variant="outline"
+          className={roleColors[user.role as keyof typeof roleColors] || roleColors.user}
+        >
+          {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
+        </Badge>
+      );
+    },
+    enableHiding: false,
+  },
+  {
     accessorKey: "status",
     header: "Status",
-    cell: () => (
-      <Badge
-        variant="outline"
-        className="text-green-600 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950"
-      >
-        Active
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const user = row.original as User;
+      const statusColors = {
+        active: "text-green-600 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950",
+        inactive: "text-gray-600 border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-800 dark:bg-gray-950",
+        suspended: "text-red-600 border-red-200 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950"
+      };
+      
+      return (
+        <Badge
+          variant="outline"
+          className={statusColors[user.status as keyof typeof statusColors] || statusColors.active}
+        >
+          {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : "Active"}
+        </Badge>
+      );
+    },
     enableHiding: false,
   },
   {
@@ -174,6 +207,8 @@ interface UserFormData {
   email: string;
   phoneNumber: string;
   password: string;
+  status: "active" | "inactive" | "suspended";
+  role: "admin" | "user" | "manager" | "support";
 }
 
 // AddUserDrawer component for adding/editing users
@@ -195,6 +230,8 @@ function AddUserDrawer({
     email: "",
     phoneNumber: "",
     password: "",
+    status: "active",
+    role: "user",
   });
   const [loading, setLoading] = React.useState(false);
 
@@ -208,6 +245,8 @@ function AddUserDrawer({
         email: user.email,
         phoneNumber: user.phoneNumber || "",
         password: "",
+        status: user.status || "active",
+        role: user.role || "user",
       });
       setOpen(true);
     }
@@ -220,6 +259,8 @@ function AddUserDrawer({
       email: "",
       phoneNumber: "",
       password: "",
+      status: "active",
+      role: "user",
     });
     onClose?.();
   };
@@ -249,6 +290,8 @@ function AddUserDrawer({
           fullName: formData.fullName,
           email: formData.email,
           phoneNumber: formData.phoneNumber,
+          status: formData.status,
+          role: formData.role,
         };
 
         if (formData.password.trim()) {
@@ -264,6 +307,8 @@ function AddUserDrawer({
           email: formData.email,
           phoneNumber: formData.phoneNumber,
           password: formData.password,
+          status: formData.status,
+          role: formData.role,
         };
 
         await UserService.createUser(createData);
@@ -351,6 +396,39 @@ function AddUserDrawer({
                 required={!isEdit}
               />
             </div>
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="status">Status *</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleInputChange("status", value as "active" | "inactive" | "suspended")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="role">Role *</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => handleInputChange("role", value as "admin" | "user" | "manager" | "support")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="support">Support</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </form>
         </div>
         <DrawerFooter>
@@ -415,7 +493,9 @@ export function UsersDataTable() {
         // Transform API data to match combined schema
         const transformedData = result.data.map((user: User) => ({
           ...user,
-          status: "Active",
+          // Ensure status and role have proper defaults if not provided by API
+          status: user.status || "active",
+          role: user.role || "user",
         }));
 
         setData(transformedData);
