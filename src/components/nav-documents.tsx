@@ -36,6 +36,7 @@ export function NavManage({
       <SidebarMenu>
         {items.map((item) => {
           const isActive = location.pathname === item.url;
+          console.log(location.pathname);
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton

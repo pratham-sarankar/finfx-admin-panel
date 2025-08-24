@@ -8,7 +8,10 @@ import {
   IconLoader,
   IconPlus,
   IconSearch,
+  IconShieldFilled,
   IconTrash,
+  IconUser,
+  IconUserOff,
 } from "@tabler/icons-react";
 import {
   type ColumnDef,
@@ -69,8 +72,8 @@ type CombinedUser = {
   fullName?: string;
   email?: string;
   phoneNumber?: string;
-  status?: "active" | "inactive" | "suspended";
-  role?: "admin" | "user" | "manager" | "support";
+  status?: "active" | "inactive";
+  role?: "admin" | "user";
 };
 
 const createColumns = (
@@ -123,45 +126,42 @@ const createColumns = (
     enableHiding: false,
   },
   {
-    accessorKey: "role",
-    header: "Role",
+    accessorKey: "status",
+    header: "Status",
     cell: ({ row }) => {
       const user = row.original as User;
-      const roleColors = {
-        admin: "text-red-600 border-red-200 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950",
-        manager: "text-blue-600 border-blue-200 bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:bg-blue-950",
-        support: "text-purple-600 border-purple-200 bg-purple-50 dark:text-purple-400 dark:border-purple-800 dark:bg-purple-950",
-        user: "text-gray-600 border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-800 dark:bg-gray-950"
-      };
-      
+
       return (
-        <Badge
-          variant="outline"
-          className={roleColors[user.role as keyof typeof roleColors] || roleColors.user}
-        >
-          {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
+        <Badge variant="outline" className="text-muted-foreground px-1.5">
+          {user.status === "inactive" ? (
+            <IconUserOff className="fill-gray-400 dark:fill-gray-300" />
+          ) : (
+            <IconUser className="fill-blue-500 dark:fill-blue-400" />
+          )}
+          {user.status
+            ? user.status.charAt(0).toUpperCase() + user.status.slice(1)
+            : "-"}
         </Badge>
       );
     },
     enableHiding: false,
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: "role",
+    header: "Role",
     cell: ({ row }) => {
       const user = row.original as User;
-      const statusColors = {
-        active: "text-green-600 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950",
-        inactive: "text-gray-600 border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-800 dark:bg-gray-950",
-        suspended: "text-red-600 border-red-200 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950"
-      };
-      
+
       return (
-        <Badge
-          variant="outline"
-          className={statusColors[user.status as keyof typeof statusColors] || statusColors.active}
-        >
-          {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : "Active"}
+        <Badge variant="outline" className="text-muted-foreground px-1.5">
+          {user.role === "admin" ? (
+            <IconShieldFilled className="fill-blue-500 dark:fill-blue-400" />
+          ) : (
+            <IconUser className="fill-gray-400 dark:fill-gray-300" />
+          )}
+          {user.role
+            ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+            : "-"}
         </Badge>
       );
     },
@@ -207,8 +207,8 @@ interface UserFormData {
   email: string;
   phoneNumber: string;
   password: string;
-  status: "active" | "inactive" | "suspended";
-  role: "admin" | "user" | "manager" | "support";
+  status: "active" | "inactive";
+  role: "admin" | "user";
 }
 
 // AddUserDrawer component for adding/editing users
@@ -272,13 +272,18 @@ function AddUserDrawer({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.fullName || !formData.email || !formData.phoneNumber) {
+    if (!formData.fullName || !formData.email) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     if (!isEdit && !formData.password) {
       toast.error("Password is required for new users");
+      return;
+    }
+
+    if (!isEdit && !formData.phoneNumber) {
+      toast.error("Phone number is required for new users");
       return;
     }
 
@@ -289,10 +294,14 @@ function AddUserDrawer({
         const updateData: UpdateUserRequest = {
           fullName: formData.fullName,
           email: formData.email,
-          phoneNumber: formData.phoneNumber,
           status: formData.status,
           role: formData.role,
         };
+
+        // Only include phoneNumber if it's not empty
+        if (formData.phoneNumber.trim()) {
+          updateData.phoneNumber = formData.phoneNumber;
+        }
 
         if (formData.password.trim()) {
           updateData.password = formData.password;
@@ -317,9 +326,9 @@ function AddUserDrawer({
       }
 
       handleClose();
-    } catch (error: unknown) {
+    } catch (error: any) {
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to create user.";
+        error.message || "Something went wrong. Please try again later.";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -371,7 +380,9 @@ function AddUserDrawer({
               />
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="phone">Phone Number *</Label>
+              <Label htmlFor="phone">
+                Phone Number {isEdit ? "(Optional)" : "*"}
+              </Label>
               <Input
                 id="phone"
                 type="tel"
@@ -380,7 +391,7 @@ function AddUserDrawer({
                 onChange={(e) =>
                   handleInputChange("phoneNumber", e.target.value)
                 }
-                required
+                required={!isEdit}
               />
             </div>
             <div className="flex flex-col gap-3">
@@ -400,15 +411,16 @@ function AddUserDrawer({
               <Label htmlFor="status">Status *</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => handleInputChange("status", value as "active" | "inactive" | "suspended")}
+                onValueChange={(value) =>
+                  handleInputChange("status", value as "active" | "inactive")
+                }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -416,16 +428,16 @@ function AddUserDrawer({
               <Label htmlFor="role">Role *</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value) => handleInputChange("role", value as "admin" | "user" | "manager" | "support")}
+                onValueChange={(value) =>
+                  handleInputChange("role", value as "admin" | "user")
+                }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="support">Support</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -494,8 +506,16 @@ export function UsersDataTable() {
         const transformedData = result.data.map((user: User) => ({
           ...user,
           // Ensure status and role have proper defaults if not provided by API
-          status: user.status || "active",
-          role: user.role || "user",
+          // Filter status to only allow active/inactive
+          status:
+            user.status === "active" || user.status === "inactive"
+              ? user.status
+              : "active",
+          // Filter role to only allow admin/user
+          role:
+            user.role === "admin" || user.role === "user" ? user.role : "user",
+          // Ensure phoneNumber is handled properly
+          phoneNumber: user.phoneNumber || "",
         }));
 
         setData(transformedData);

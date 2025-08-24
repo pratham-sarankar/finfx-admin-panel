@@ -29,11 +29,11 @@ export class UserService {
         n: perPage.toString(),
         p: page.toString(),
       });
-      
+
       if (query && query.trim()) {
-        searchParams.append('q', query.trim());
+        searchParams.append("q", query.trim());
       }
-      
+
       const response = await fetch(
         `${getApiUrl(API_CONFIG.ENDPOINTS.USERS)}?${searchParams.toString()}`,
         {
@@ -98,10 +98,9 @@ export class UserService {
       }
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       const apiError: ApiError = {
-        message:
-          error instanceof Error ? error.message : "Failed to create user",
+        message: error.message || "Failed to create user",
       };
       throw apiError;
     }
@@ -121,14 +120,10 @@ export class UserService {
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const result = await response.json();
 
       // Check if the backend indicates the operation was successful
-      if (!result.success) {
+      if (!response.ok || !result.success) {
         throw new Error(result.message || "Failed to update user");
       }
 
