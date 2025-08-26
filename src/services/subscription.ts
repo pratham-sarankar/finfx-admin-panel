@@ -117,13 +117,23 @@ export class SubscriptionService {
 
   static async deleteMultipleSubscriptions(ids: string[]): Promise<DeleteSubscriptionResponse> {
     try {
-      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.SUBSCRIPTION), {
-        method: "DELETE",
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify({ subscriptionIds: ids }),
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return await response.json();
+      // Backend does not expose a bulk delete endpoint for subscriptions.
+      // Perform multiple DELETE calls and aggregate the result.
+      const results = await Promise.allSettled(
+        ids.map((id) =>
+          fetch(`${getApiUrl(API_CONFIG.ENDPOINTS.SUBSCRIPTION)}/${id}`, {
+            method: "DELETE",
+            headers: this.getAuthHeaders(),
+          })
+        )
+      );
+
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed > 0) {
+        throw new Error(`Failed to delete ${failed} of ${ids.length} subscriptions`);
+      }
+
+      return { success: true, message: "Deleted selected subscriptions" } as DeleteSubscriptionResponse;
     } catch (error) {
       throw { message: error instanceof Error ? error.message : "Failed to delete subscriptions" } as ApiError;
     }

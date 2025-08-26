@@ -31,7 +31,10 @@ export class UserService {
       });
 
       if (query && query.trim()) {
-        searchParams.append("q", query.trim());
+        // Support multiple possible backend query keys
+        const q = query.trim();
+        searchParams.append("q", q);
+        searchParams.append("search", q);
       }
 
       const response = await fetch(
@@ -46,7 +49,25 @@ export class UserService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const raw = await response.json();
+
+      // Normalize various shapes to UsersApiResponse
+      const data = raw.data || raw.users || [];
+      const totalPages =
+        raw.totalPages ??
+        (raw.totalUsers ? Math.ceil(raw.totalUsers / (perPage || 10)) : 1);
+      const totalUsers = raw.totalUsers ?? raw.totalItems ?? data.length;
+
+      const normalized: UsersApiResponse = {
+        success: raw.success !== undefined ? !!raw.success : true,
+        data,
+        page: raw.page ?? page,
+        perPage: raw.perPage ?? perPage,
+        totalPages,
+        totalUsers,
+      };
+
+      return normalized;
     } catch (error) {
       const apiError: ApiError = {
         message:
