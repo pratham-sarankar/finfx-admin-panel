@@ -7,6 +7,7 @@ import { Layout } from "./app-sidebar-layout";
 import HomePage from "@/pages/home";
 import UsersPage from "@/pages/users";
 import LoginPage from "@/pages/login";
+import SubscriptionPage from "@/pages/subscriptions";
 
 export function AppRouter() {
   const { isLoading } = useAuth();
@@ -40,10 +41,10 @@ export function AppRouter() {
             <ProtectedRoute>
               <Layout />
             </ProtectedRoute>
-          }
-        >
+          }>
           <Route index element={<HomePage />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="subscriptions" element={<SubscriptionPage />} />
         </Route>
 
         {/* Catch all route - redirect to home */}
