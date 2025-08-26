@@ -78,9 +78,8 @@ export class SubscriptionService {
       });
 
       const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Failed to create subscription");
-      }
+
+      
       return result;
     } catch (error: any) {
       throw { message: error.message || "Failed to create subscription" } as ApiError;
