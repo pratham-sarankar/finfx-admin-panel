@@ -178,8 +178,7 @@ const createColumns = (
             <Button
               variant="ghost"
               className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-              size="icon"
-            >
+              size="icon">
               <IconDotsVertical />
               <span className="sr-only">Open menu</span>
             </Button>
@@ -191,8 +190,7 @@ const createColumns = (
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              onClick={() => onDelete(user)}
-            >
+              onClick={() => onDelete(user)}>
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -339,8 +337,7 @@ function AddUserDrawer({
     <Drawer
       direction={isMobile ? "bottom" : "right"}
       open={open}
-      onOpenChange={setOpen}
-    >
+      onOpenChange={setOpen}>
       <DrawerTrigger asChild>
         <Button variant="outline" size="sm">
           <IconPlus />
@@ -413,8 +410,7 @@ function AddUserDrawer({
                 value={formData.status}
                 onValueChange={(value) =>
                   handleInputChange("status", value as "active" | "inactive")
-                }
-              >
+                }>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -430,8 +426,7 @@ function AddUserDrawer({
                 value={formData.role}
                 onValueChange={(value) =>
                   handleInputChange("role", value as "admin" | "user")
-                }
-              >
+                }>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -668,8 +663,7 @@ export function UsersDataTable() {
               variant="destructive"
               size="sm"
               onClick={handleMultiDelete}
-              disabled={deleting}
-            >
+              disabled={deleting}>
               {deleting ? (
                 <IconLoader className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -723,8 +717,7 @@ export function UsersDataTable() {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
+                    className="h-24 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <IconLoader className="h-4 w-4 animate-spin" />
                       Loading users...
@@ -735,8 +728,7 @@ export function UsersDataTable() {
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
+                    data-state={row.getIsSelected() && "selected"}>
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(
@@ -751,8 +743,7 @@ export function UsersDataTable() {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
+                    className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>
@@ -774,8 +765,7 @@ export function UsersDataTable() {
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value));
-                }}
-              >
+                }}>
                 <SelectTrigger size="sm" className="w-20" id="rows-per-page">
                   <SelectValue
                     placeholder={table.getState().pagination.pageSize}
@@ -798,8 +788,7 @@ export function UsersDataTable() {
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-              >
+                disabled={!table.getCanPreviousPage()}>
                 <span className="sr-only">Go to first page</span>
                 <IconChevronsLeft />
               </Button>
@@ -808,8 +797,7 @@ export function UsersDataTable() {
                 className="size-8"
                 size="icon"
                 onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
+                disabled={!table.getCanPreviousPage()}>
                 <span className="sr-only">Go to previous page</span>
                 <IconChevronLeft />
               </Button>
@@ -818,8 +806,7 @@ export function UsersDataTable() {
                 className="size-8"
                 size="icon"
                 onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
+                disabled={!table.getCanNextPage()}>
                 <span className="sr-only">Go to next page</span>
                 <IconChevronRight />
               </Button>
@@ -828,8 +815,7 @@ export function UsersDataTable() {
                 className="hidden size-8 lg:flex"
                 size="icon"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-              >
+                disabled={!table.getCanNextPage()}>
                 <span className="sr-only">Go to last page</span>
                 <IconChevronsRight />
               </Button>
