@@ -66,7 +66,17 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { UserService } from "@/services/user";
 import type { User, CreateUserRequest, UpdateUserRequest } from "@/types/user";
 
-// Type for the table that includes user data from API with status
+import { SubscriptionService } from "@/services/subscription";
+import type { Subscription } from "@/types/subscription";
+
+/* ----------------------------- Types & Helpers ---------------------------- */
+
+interface UserSubscriptionsDrawerProps {
+  userId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
 type CombinedUser = {
   id: string | number;
   fullName?: string;
@@ -76,9 +86,19 @@ type CombinedUser = {
   role?: "admin" | "user";
 };
 
+// Safe accessors for union types like string | { name?: string }
+const getBotName = (bot: Subscription["bot"]) =>
+  typeof bot === "string" ? bot : bot?.name ?? "-";
+
+const getPackageName = (pkg: Subscription["package"]) =>
+  typeof pkg === "string" ? pkg : pkg?.name ?? "-";
+
+/* --------------------------------- Columns -------------------------------- */
+
 const createColumns = (
   onEdit: (user: User) => void,
-  onDelete: (user: User) => void
+  onDelete: (user: User) => void,
+  onViewSubscriptions: (userId: string | number) => void
 ): ColumnDef<CombinedUser>[] => [
   {
     id: "select",
@@ -106,11 +126,19 @@ const createColumns = (
     enableSorting: false,
     enableHiding: false,
   },
-  // New user columns at the beginning
   {
     accessorKey: "fullName",
     header: "Full Name",
-    cell: ({ row }) => row.original.fullName || "-",
+    cell: ({ row }) => {
+      const user = row.original as User;
+      return (
+        <button
+          onClick={() => onViewSubscriptions(user.id)}
+          className=" hover:underline cursor-pointer">
+          {user.fullName || "-"}
+        </button>
+      );
+    },
     enableHiding: false,
   },
   {
@@ -130,13 +158,12 @@ const createColumns = (
     header: "Status",
     cell: ({ row }) => {
       const user = row.original as User;
-
       return (
         <Badge variant="outline" className="text-muted-foreground px-1.5">
           {user.status === "inactive" ? (
-            <IconUserOff className="fill-gray-400 dark:fill-gray-300" />
+            <IconUserOff className="mr-1 fill-gray-400 dark:fill-gray-300" />
           ) : (
-            <IconUser className="fill-blue-500 dark:fill-blue-400" />
+            <IconUser className="mr-1 fill-blue-500 dark:fill-blue-400" />
           )}
           {user.status
             ? user.status.charAt(0).toUpperCase() + user.status.slice(1)
@@ -151,13 +178,12 @@ const createColumns = (
     header: "Role",
     cell: ({ row }) => {
       const user = row.original as User;
-
       return (
         <Badge variant="outline" className="text-muted-foreground px-1.5">
           {user.role === "admin" ? (
-            <IconShieldFilled className="fill-blue-500 dark:fill-blue-400" />
+            <IconShieldFilled className="mr-1 fill-blue-500 dark:fill-blue-400" />
           ) : (
-            <IconUser className="fill-gray-400 dark:fill-gray-300" />
+            <IconUser className="mr-1 fill-gray-400 dark:fill-gray-300" />
           )}
           {user.role
             ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
@@ -171,7 +197,6 @@ const createColumns = (
     id: "actions",
     cell: ({ row }) => {
       const user = row.original as User;
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -183,7 +208,8 @@ const createColumns = (
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-32">
+          <DropdownMenuContent align="end" className="w-40">
+            {/* 👇 "View Subscriptions" removed */}
             <DropdownMenuItem onClick={() => onEdit(user)}>
               Edit
             </DropdownMenuItem>
@@ -200,6 +226,112 @@ const createColumns = (
   },
 ];
 
+/* --------------------------- Subscriptions Drawer -------------------------- */
+
+export function UserSubscriptionsDrawer({
+  userId,
+  open,
+  onOpenChange,
+}: UserSubscriptionsDrawerProps) {
+  const [subscriptions, setSubscriptions] = React.useState<Subscription[]>([]);
+  const [loading, setLoading] = React.useState(false);
+
+  const fetchSubscriptions = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await SubscriptionService.getSubscriptions(
+        1,
+        50,
+        undefined,
+        undefined,
+        userId
+      );
+      setSubscriptions(res.data);
+    } catch (err) {
+      console.error("Failed to fetch subscriptions:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to fetch subscriptions"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  React.useEffect(() => {
+    if (open && userId) fetchSubscriptions();
+  }, [open, userId, fetchSubscriptions]);
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>User Subscriptions</DrawerTitle>
+          <DrawerDescription>All subscriptions for this user</DrawerDescription>
+        </DrawerHeader>
+
+        <div className="overflow-auto max-h-[70vh] px-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-4">
+              <IconLoader className="h-4 w-4 animate-spin mr-2" />
+              Loading subscriptions...
+            </div>
+          ) : subscriptions.length ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Bot</TableHead>
+                  <TableHead>Package</TableHead>
+                  <TableHead>Lot Size</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {subscriptions.map((sub) => (
+                  <TableRow key={sub.id}>
+                    <TableCell>{getBotName(sub.bot)}</TableCell>
+                    <TableCell>{getPackageName(sub.package)}</TableCell>
+                    <TableCell>{sub.lotSize}</TableCell>
+                    <TableCell>
+                      {/* 👇 Status UI same as user status */}
+                      <Badge
+                        variant="outline"
+                        className="text-muted-foreground px-1.5">
+                        {sub.status === "active" && (
+                          <IconUser className="mr-1 fill-blue-500 dark:fill-blue-400" />
+                        )}
+                        {sub.status === "paused" && (
+                          <IconUserOff className="mr-1 fill-gray-400 dark:fill-gray-300" />
+                        )}
+                        {sub.status === "expired" && (
+                          <IconTrash className="mr-1 fill-red-500" />
+                        )}
+                        {sub.status
+                          ? sub.status.charAt(0).toUpperCase() +
+                            sub.status.slice(1)
+                          : "-"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-center py-4">No subscriptions found.</p>
+          )}
+        </div>
+
+        <DrawerFooter>
+          <DrawerClose asChild>
+            <Button variant="outline">Close</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+/* ------------------------------ Users Table UI ----------------------------- */
+
 interface UserFormData {
   fullName: string;
   email: string;
@@ -209,7 +341,6 @@ interface UserFormData {
   role: "admin" | "user";
 }
 
-// AddUserDrawer component for adding/editing users
 function AddUserDrawer({
   user,
   onUserAdded,
@@ -235,7 +366,6 @@ function AddUserDrawer({
 
   const isEdit = !!user;
 
-  // Pre-fill form when editing
   React.useEffect(() => {
     if (user) {
       setFormData({
@@ -269,24 +399,20 @@ function AddUserDrawer({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.fullName || !formData.email) {
       toast.error("Please fill in all required fields");
       return;
     }
-
     if (!isEdit && !formData.password) {
       toast.error("Password is required for new users");
       return;
     }
-
     if (!isEdit && !formData.phoneNumber) {
       toast.error("Phone number is required for new users");
       return;
     }
 
     setLoading(true);
-
     try {
       if (isEdit && user) {
         const updateData: UpdateUserRequest = {
@@ -295,15 +421,9 @@ function AddUserDrawer({
           status: formData.status,
           role: formData.role,
         };
-
-        // Only include phoneNumber if it's not empty
-        if (formData.phoneNumber.trim()) {
+        if (formData.phoneNumber.trim())
           updateData.phoneNumber = formData.phoneNumber;
-        }
-
-        if (formData.password.trim()) {
-          updateData.password = formData.password;
-        }
+        if (formData.password.trim()) updateData.password = formData.password;
 
         await UserService.updateUser(user.id, updateData);
         toast.success("User updated successfully");
@@ -317,17 +437,15 @@ function AddUserDrawer({
           status: formData.status,
           role: formData.role,
         };
-
         await UserService.createUser(createData);
         toast.success("User created successfully");
         onUserAdded?.();
       }
-
       handleClose();
     } catch (error: any) {
-      const errorMessage =
-        error.message || "Something went wrong. Please try again later.";
-      toast.error(errorMessage);
+      toast.error(
+        error?.message ?? "Something went wrong. Please try again later."
+      );
     } finally {
       setLoading(false);
     }
@@ -481,45 +599,47 @@ export function UsersDataTable() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState("");
 
-  // Debounce search query
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
+  const [subscriptionsDrawerOpen, setSubscriptionsDrawerOpen] =
+    React.useState(false);
+  const [selectedUserId, setSelectedUserId] = React.useState<string | null>(
+    null
+  );
 
+  const handleShowSubscriptions = React.useCallback(
+    (userId: string | number) => {
+      setSelectedUserId(userId.toString());
+      setSubscriptionsDrawerOpen(true);
+    },
+    []
+  );
+
+  // Debounce search
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Fetch users from API
   const fetchUsers = React.useCallback(
     async (page: number, pageSize: number, query?: string) => {
       setLoading(true);
       try {
         const result = await UserService.getUsers(page + 1, pageSize, query);
-
-        // Transform API data to match combined schema
         const transformedData = result.data.map((user: User) => ({
           ...user,
-          // Ensure status and role have proper defaults if not provided by API
-          // Filter status to only allow active/inactive
           status:
             user.status === "active" || user.status === "inactive"
               ? user.status
               : "active",
-          // Filter role to only allow admin/user
           role:
             user.role === "admin" || user.role === "user" ? user.role : "user",
-          // Ensure phoneNumber is handled properly
           phoneNumber: user.phoneNumber || "",
         }));
-
         setData(transformedData);
         setTotalPages(result.totalPages);
         setTotalUsers(result.totalUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
         toast.error("Failed to fetch users");
-        // Set empty data if API fails
         setData([]);
       } finally {
         setLoading(false);
@@ -528,7 +648,6 @@ export function UsersDataTable() {
     []
   );
 
-  // Fetch users when pagination or search changes
   React.useEffect(() => {
     fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
   }, [
@@ -538,35 +657,29 @@ export function UsersDataTable() {
     fetchUsers,
   ]);
 
-  // Reset to first page when search changes
   React.useEffect(() => {
-    if (debouncedSearchQuery !== searchQuery) return; // Avoid double fetch during debounce
+    if (debouncedSearchQuery !== searchQuery) return;
     if (pagination.pageIndex !== 0) {
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     }
   }, [debouncedSearchQuery, pagination.pageIndex, searchQuery]);
 
-  // Initial data fetch
   React.useEffect(() => {
     fetchUsers(0, 10);
   }, [fetchUsers]);
 
   const handleUserAdded = () => {
-    // Clear selection and refresh data
     setRowSelection({});
     fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
   };
 
   const handleUserUpdated = () => {
     setEditingUser(null);
-    // Clear selection and refresh data
     setRowSelection({});
     fetchUsers(pagination.pageIndex, pagination.pageSize, debouncedSearchQuery);
   };
 
-  const handleEditUser = (user: User) => {
-    setEditingUser(user);
-  };
+  const handleEditUser = (user: User) => setEditingUser(user);
 
   const handleDeleteUser = (user: User) => {
     setUserToDelete(user);
@@ -575,12 +688,10 @@ export function UsersDataTable() {
 
   const confirmDeleteUser = async () => {
     if (!userToDelete) return;
-
     setDeleting(true);
     try {
       await UserService.deleteUser(userToDelete.id);
       toast.success("User deleted successfully");
-      // Clear selection and refresh data
       setRowSelection({});
       fetchUsers(
         pagination.pageIndex,
@@ -597,21 +708,17 @@ export function UsersDataTable() {
     }
   };
 
-  const handleMultiDelete = () => {
-    setShowMultiDeleteConfirm(true);
-  };
+  const handleMultiDelete = () => setShowMultiDeleteConfirm(true);
 
   const confirmMultiDelete = async () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
     const selectedIds = selectedRows.map((row) => row.original.id.toString());
-
     if (selectedIds.length === 0) return;
 
     setDeleting(true);
     try {
       const response = await UserService.deleteMultipleUsers(selectedIds);
       toast.success(response.message);
-      // Clear selection and refresh data
       setRowSelection({});
       fetchUsers(
         pagination.pageIndex,
@@ -629,17 +736,15 @@ export function UsersDataTable() {
   };
 
   const columns = React.useMemo(
-    () => createColumns(handleEditUser, handleDeleteUser),
-    []
+    () =>
+      createColumns(handleEditUser, handleDeleteUser, handleShowSubscriptions),
+    [handleEditUser, handleDeleteUser, handleShowSubscriptions]
   );
 
   const table = useReactTable({
     data,
     columns,
-    state: {
-      rowSelection,
-      pagination,
-    },
+    state: { rowSelection, pagination },
     getRowId: (row) => row.id.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
@@ -691,24 +796,23 @@ export function UsersDataTable() {
           />
         </div>
       </div>
+
       <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         <div className="overflow-hidden rounded-lg border">
           <Table>
             <TableHeader className="bg-muted sticky top-0 z-10">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} colSpan={header.colSpan}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
                 </TableRow>
               ))}
             </TableHeader>
@@ -751,6 +855,7 @@ export function UsersDataTable() {
             </TableBody>
           </Table>
         </div>
+
         <div className="flex items-center justify-between px-4">
           <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
             {table.getFilteredSelectedRowModel().rows.length} of {totalUsers}{" "}
@@ -846,6 +951,14 @@ export function UsersDataTable() {
         onConfirm={confirmMultiDelete}
         variant="destructive"
       />
+
+      {selectedUserId && (
+        <UserSubscriptionsDrawer
+          userId={selectedUserId}
+          open={subscriptionsDrawerOpen}
+          onOpenChange={setSubscriptionsDrawerOpen}
+        />
+      )}
     </div>
   );
 }
