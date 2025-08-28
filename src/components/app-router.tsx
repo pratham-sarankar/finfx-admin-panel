@@ -8,6 +8,7 @@ import HomePage from "@/pages/home";
 import UsersPage from "@/pages/users";
 import LoginPage from "@/pages/login";
 import SubscriptionPage from "@/pages/subscriptions";
+import SettingsPage from "@/pages/settings";
 
 export function AppRouter() {
   const { isLoading } = useAuth();
@@ -45,6 +46,7 @@ export function AppRouter() {
           <Route index element={<HomePage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="subscriptions" element={<SubscriptionPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* Catch all route - redirect to home */}
