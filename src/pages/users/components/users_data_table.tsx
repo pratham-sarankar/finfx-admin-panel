@@ -228,11 +228,115 @@ const createColumns = (
 
 /* --------------------------- Subscriptions Drawer -------------------------- */
 
+// export function UserSubscriptionsDrawer({
+//   userId,
+//   open,
+//   onOpenChange,
+// }: UserSubscriptionsDrawerProps) {
+//   const [subscriptions, setSubscriptions] = React.useState<Subscription[]>([]);
+//   const [loading, setLoading] = React.useState(false);
+
+//   const fetchSubscriptions = React.useCallback(async () => {
+//     setLoading(true);
+//     try {
+//       const res = await SubscriptionService.getSubscriptions(
+//         1,
+//         50,
+//         undefined,
+//         undefined,
+//         userId
+//       );
+//       setSubscriptions(res.data);
+//     } catch (err) {
+//       console.error("Failed to fetch subscriptions:", err);
+//       toast.error(
+//         err instanceof Error ? err.message : "Failed to fetch subscriptions"
+//       );
+//     } finally {
+//       setLoading(false);
+//     }
+//   }, [userId]);
+
+//   React.useEffect(() => {
+//     if (open && userId) fetchSubscriptions();
+//   }, [open, userId, fetchSubscriptions]);
+
+//   return (
+//     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
+//       <DrawerContent>
+//         <DrawerHeader>
+//           <DrawerTitle>User Subscriptions</DrawerTitle>
+//           <DrawerDescription>All subscriptions for this user</DrawerDescription>
+//         </DrawerHeader>
+
+//         <div className="overflow-auto max-h-[70vh] px-4">
+//           {loading ? (
+//             <div className="flex items-center justify-center py-4">
+//               <IconLoader className="h-4 w-4 animate-spin mr-2" />
+//               Loading subscriptions...
+//             </div>
+//           ) : subscriptions.length ? (
+//             <Table>
+//               <TableHeader>
+//                 <TableRow>
+//                   <TableHead>Bot</TableHead>
+//                   <TableHead>Package</TableHead>
+//                   <TableHead>Lot Size</TableHead>
+//                   <TableHead>Status</TableHead>
+//                 </TableRow>
+//               </TableHeader>
+//               <TableBody>
+//                 {subscriptions.map((sub) => (
+//                   <TableRow key={sub.id}>
+//                     <TableCell>{getBotName(sub.bot)}</TableCell>
+//                     <TableCell>{getPackageName(sub.package)}</TableCell>
+//                     <TableCell>{sub.lotSize}</TableCell>
+//                     <TableCell>
+//                       {/* 👇 Status UI same as user status */}
+//                       <Badge
+//                         variant="outline"
+//                         className="text-muted-foreground px-1.5">
+//                         {sub.status === "active" && (
+//                           <IconUser className="mr-1 fill-blue-500 dark:fill-blue-400" />
+//                         )}
+//                         {sub.status === "paused" && (
+//                           <IconUserOff className="mr-1 fill-gray-400 dark:fill-gray-300" />
+//                         )}
+//                         {sub.status === "expired" && (
+//                           <IconTrash className="mr-1 fill-red-500" />
+//                         )}
+//                         {sub.status
+//                           ? sub.status.charAt(0).toUpperCase() +
+//                             sub.status.slice(1)
+//                           : "-"}
+//                       </Badge>
+//                     </TableCell>
+//                   </TableRow>
+//                 ))}
+//               </TableBody>
+//             </Table>
+//           ) : (
+//             <p className="text-center py-4">No subscriptions found.</p>
+//           )}
+//         </div>
+
+//         <DrawerFooter>
+//           <DrawerClose asChild>
+//             <Button variant="outline">Close</Button>
+//           </DrawerClose>
+//         </DrawerFooter>
+//       </DrawerContent>
+//     </Drawer>
+//   );
+// }
+
 export function UserSubscriptionsDrawer({
   userId,
   open,
   onOpenChange,
 }: UserSubscriptionsDrawerProps) {
+  const isMobile = useIsMobile();
+
   const [subscriptions, setSubscriptions] = React.useState<Subscription[]>([]);
   const [loading, setLoading] = React.useState(false);
 
@@ -262,14 +366,30 @@ export function UserSubscriptionsDrawer({
   }, [open, userId, fetchSubscriptions]);
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent>
-        <DrawerHeader>
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      // open from bottom on mobile, right on desktop
+      direction={isMobile ? "bottom" : "right"}>
+      {/* For mobile bottom drawer we add rounded top + larger height */}
+      <DrawerContent
+        className={
+          isMobile
+            ? "rounded-t-2xl h-[80vh] max-h-[90vh] pb-0" // more vertical space on mobile
+            : ""
+        }>
+        <DrawerHeader className={isMobile ? "px-4 pt-4" : ""}>
           <DrawerTitle>User Subscriptions</DrawerTitle>
           <DrawerDescription>All subscriptions for this user</DrawerDescription>
         </DrawerHeader>
 
-        <div className="overflow-auto max-h-[70vh] px-4">
+        {/* Scrollable area: slightly reduced height on mobile so footer stays visible */}
+        <div
+          className={
+            isMobile
+              ? "overflow-auto max-h-[62vh] px-4 pt-2 pb-4"
+              : "overflow-auto max-h-[70vh] px-4"
+          }>
           {loading ? (
             <div className="flex items-center justify-center py-4">
               <IconLoader className="h-4 w-4 animate-spin mr-2" />
@@ -292,7 +412,6 @@ export function UserSubscriptionsDrawer({
                     <TableCell>{getPackageName(sub.package)}</TableCell>
                     <TableCell>{sub.lotSize}</TableCell>
                     <TableCell>
-                      {/* 👇 Status UI same as user status */}
                       <Badge
                         variant="outline"
                         className="text-muted-foreground px-1.5">
@@ -320,7 +439,13 @@ export function UserSubscriptionsDrawer({
           )}
         </div>
 
-        <DrawerFooter>
+        {/* Sticky footer on mobile so Close button stays accessible above keyboard */}
+        <DrawerFooter
+          className={
+            isMobile
+              ? "sticky bottom-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-md border-t px-4 py-3"
+              : ""
+          }>
           <DrawerClose asChild>
             <Button variant="outline">Close</Button>
           </DrawerClose>
