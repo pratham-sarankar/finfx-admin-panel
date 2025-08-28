@@ -18,56 +18,105 @@ export class SubscriptionService {
     };
   }
 
+  // static async getSubscriptions(
+  //   page: number = 1,
+  //   perPage: number = 10,
+  //   query?: string,
+  //   status?: string,
+  //   userId?: string
+  // ): Promise<SubscriptionsApiResponse> {
+  //   try {
+  //     const params = new URLSearchParams({
+  //       n: perPage.toString(),
+  //       p: page.toString(),
+  //     });
+  //     if (query && query.trim()) params.append("q", query.trim());
+  //     if (status) params.append("status", status);
+  //     if (userId) params.append("userId", userId);
+
+  //     const response = await fetch(
+  //       `${getApiUrl(API_CONFIG.ENDPOINTS.SUBSCRIPTION)}?${params.toString()}`,
+  //       {
+  //         method: "GET",
+  //         headers: this.getAuthHeaders(),
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+
+  //     const result = await response.json();
+
+  //     // Normalize different backend shapes -> return { data, totalPages, totalItems }
+  //     const normalized: SubscriptionsApiResponse = {
+  //       data: result.data || result?.subscriptions || [],
+  //       totalPages:
+  //         result.totalPages ??
+  //         result.pages ??
+  //         Math.ceil((result.totalSubscriptions ?? result.totalItems ?? 0) / (perPage || 10)),
+  //       totalItems: result.totalSubscriptions ?? result.totalItems ?? 0,
+  //       page: result.page ?? page,
+  //       perPage: result.perPage ?? perPage,
+  //     };
+
+  //     return normalized;
+  //   } catch (error) {
+  //     const apiError: ApiError = {
+  //       message: error instanceof Error ? error.message : "Failed to fetch subscriptions",
+  //     };
+  //     throw apiError;
+  //   }
+  // }
+
   static async getSubscriptions(
-    page: number = 1,
-    perPage: number = 10,
-    query?: string,
-    status?: string,
-    userId?: string
-  ): Promise<SubscriptionsApiResponse> {
-    try {
-      const params = new URLSearchParams({
-        n: perPage.toString(),
-        p: page.toString(),
-      });
-      if (query && query.trim()) params.append("q", query.trim());
-      if (status) params.append("status", status);
-      if (userId) params.append("userId", userId);
+  page: number = 1,
+  perPage: number = 10,
+  query?: string ,
+  status?: string,
+  userId?: string | number
+): Promise<SubscriptionsApiResponse> {
+  try {
+    const params = new URLSearchParams({
+      n: perPage.toString(),
+      p: page.toString(),
+    });
+    if (query && query.trim()) params.append("q", query.trim());
+    if (status) params.append("status", status);
+    if (userId !== undefined) params.append("userId", userId.toString());
 
-      const response = await fetch(
-        `${getApiUrl(API_CONFIG.ENDPOINTS.SUBSCRIPTION)}?${params.toString()}`,
-        {
-          method: "GET",
-          headers: this.getAuthHeaders(),
-        }
-      );
+    const response = await fetch(
+      `${getApiUrl(API_CONFIG.ENDPOINTS.SUBSCRIPTION)}?${params.toString()}`,
+      { method: "GET", headers: this.getAuthHeaders() }
+    );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      // Normalize different backend shapes -> return { data, totalPages, totalItems }
-      const normalized: SubscriptionsApiResponse = {
-        data: result.data || result?.subscriptions || [],
-        totalPages:
-          result.totalPages ??
-          result.pages ??
-          Math.ceil((result.totalSubscriptions ?? result.totalItems ?? 0) / (perPage || 10)),
-        totalItems: result.totalSubscriptions ?? result.totalItems ?? 0,
-        page: result.page ?? page,
-        perPage: result.perPage ?? perPage,
-      };
-
-      return normalized;
-    } catch (error) {
-      const apiError: ApiError = {
-        message: error instanceof Error ? error.message : "Failed to fetch subscriptions",
-      };
-      throw apiError;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const result = await response.json();
+
+    const normalized: SubscriptionsApiResponse = {
+      data: result.data || result?.subscriptions || [],
+      totalPages:
+        result.totalPages ??
+        result.pages ??
+        Math.ceil(
+          (result.totalSubscriptions ?? result.totalItems ?? 0) / (perPage || 10)
+        ),
+      totalItems: result.totalSubscriptions ?? result.totalItems ?? 0,
+      page: result.page ?? page,
+      perPage: result.perPage ?? perPage,
+    };
+
+    return normalized;
+  } catch (error) {
+    throw {
+      message: error instanceof Error ? error.message : "Failed to fetch subscriptions",
+    } as ApiError;
   }
+}
+
 
   static async createSubscription(data: CreateSubscriptionRequest): Promise<SubscriptionApiResponse> {
     try {
@@ -78,9 +127,8 @@ export class SubscriptionService {
       });
 
       const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Failed to create subscription");
-      }
+
+      
       return result;
     } catch (error: any) {
       throw { message: error.message || "Failed to create subscription" } as ApiError;
