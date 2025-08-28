@@ -6,6 +6,6 @@ export const API_CONFIG = {
     SUBSCRIPTION: "/subscriptions",
   },
 } as const;
-
+ 
 export const getApiUrl = (endpoint: string) =>
   `${API_CONFIG.BASE_URL}${endpoint}`;
