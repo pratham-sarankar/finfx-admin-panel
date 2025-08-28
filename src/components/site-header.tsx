@@ -22,6 +22,8 @@ export function SiteHeader() {
         return "Dashboard";
       case "/users":
         return "Users";
+      case "/settings":
+        return "Settings";
       default:
         return "Dashboard";
     }
@@ -47,8 +49,7 @@ export function SiteHeader() {
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground hover:text-foreground"
-                onClick={() => setLogoutDialogOpen(true)}
-              >
+                onClick={() => setLogoutDialogOpen(true)}>
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">Logout</span>
               </Button>
