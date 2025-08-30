@@ -4,8 +4,9 @@ export const API_CONFIG = {
     LOGIN: "/auth/login",
     USERS: "/users",
     SUBSCRIPTION: "/subscriptions",
+    BOT: "/bots",
   },
 } as const;
-
+ 
 export const getApiUrl = (endpoint: string) =>
   `${API_CONFIG.BASE_URL}${endpoint}`;

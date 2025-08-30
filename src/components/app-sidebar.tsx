@@ -1,8 +1,10 @@
 import * as React from "react";
 import {
+  IconCellSignal5,
   IconCreditCard,
   IconDashboard,
   IconInnerShadowTop,
+  IconRobot,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react";
@@ -40,6 +42,16 @@ const data = {
       title: "Subscriptions",
       url: "/subscriptions",
       icon: IconCreditCard,
+    },
+    {
+      title: "Bots",
+      url: "/bots",
+      icon: IconRobot,
+    },
+    {
+      title: "Signals",
+      url: "/signals",
+      icon: IconCellSignal5,
     },
   ],
   navSecondary: [
