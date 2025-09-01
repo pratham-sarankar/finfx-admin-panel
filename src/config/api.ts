@@ -5,6 +5,7 @@ export const API_CONFIG = {
     USERS: "/users",
     SUBSCRIPTION: "/subscriptions",
     BOT: "/bots",
+    SIGNAL: "/signals",
   },
 } as const;
  
