@@ -138,7 +138,7 @@ const createColumns = (
   },
   {
     accessorKey: "script",
-    header: "script",
+    header: "Script",
     cell: ({ row }) => row.original.script ?? "-",
   },
   {
@@ -416,7 +416,7 @@ function AddBotDrawer({
             </div>
 
             <div className="flex flex-col gap-3 w-full">
-              <Label htmlFor="script">script</Label>
+              <Label htmlFor="script">Script</Label>
               <Input
                 id="script"
                 value={form.script}

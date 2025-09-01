@@ -10,6 +10,7 @@ import LoginPage from "@/pages/login";
 import SubscriptionPage from "@/pages/subscriptions";
 import SettingsPage from "@/pages/settings";
 import BotsPage from "@/pages/bots";
+import SignalPage from "@/pages/signals";
 
 export function AppRouter() {
   const { isLoading } = useAuth();
@@ -49,6 +50,7 @@ export function AppRouter() {
           <Route path="subscriptions" element={<SubscriptionPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="bots" element={<BotsPage />} />
+          <Route path="signals" element={<SignalPage />} />
         </Route>
 
         {/* Catch all route - redirect to home */}
