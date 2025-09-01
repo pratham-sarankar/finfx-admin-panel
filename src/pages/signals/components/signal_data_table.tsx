@@ -158,6 +158,76 @@ export default function SignalsDataTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery, searchQuery]);
 
+  // const fetchSignals = React.useCallback(
+  //   async (pageIndex: number, pageSize: number, query?: string) => {
+  //     setLoading(true);
+  //     try {
+  //       const res: any = await SignalService.getSignals(
+  //         pageIndex + 1,
+  //         pageSize,
+  //         query ?? ""
+  //       );
+  //       const items: any[] = res?.data ?? [];
+
+  //       const totalSignals =
+  //         res?.pagination?.totalSignals ??
+  //         res?.pagination?.total ??
+  //         res?.totalItems ??
+  //         res?.totalSignals ??
+  //         items.length;
+
+  //       const totalPagesFromServer =
+  //         res?.pagination?.totalPages ??
+  //         res?.totalPages ??
+  //         Math.max(1, Math.ceil(totalSignals / pageSize));
+
+  //       const safePageIndex = Math.max(
+  //         0,
+  //         Math.min(pageIndex, Math.max(0, totalPagesFromServer - 1))
+  //       );
+
+  //       let displayed: any[] = items;
+  //       const serverProvidedPagination = Boolean(
+  //         res?.pagination ||
+  //           typeof res?.totalPages !== "undefined" ||
+  //           typeof res?.totalItems !== "undefined"
+  //       );
+
+  //       if (!serverProvidedPagination) {
+  //         const pages = Math.max(1, Math.ceil(items.length / pageSize));
+  //         const idx = Math.max(0, Math.min(pageIndex, pages - 1));
+  //         displayed = items.slice(idx * pageSize, (idx + 1) * pageSize);
+  //       } else {
+  //         if (items.length > pageSize) {
+  //           displayed = items.slice(
+  //             safePageIndex * pageSize,
+  //             (safePageIndex + 1) * pageSize
+  //           );
+  //         } else {
+  //           displayed = items;
+  //         }
+  //       }
+
+  //       setData(displayed as Signal[]);
+  //       setTotalPages(Math.max(1, Number(totalPagesFromServer)));
+  //       setTotalItems(Number(totalSignals));
+
+  //       if (safePageIndex !== pageIndex) {
+  //         setPagination((p) => ({ ...p, pageIndex: safePageIndex }));
+  //       }
+  //     } catch (err: any) {
+  //       console.error("Failed to fetch signals:", err);
+  //       toast.error(err?.message || "Failed to load signals");
+  //       setData([]);
+  //       setTotalPages(1);
+  //       setTotalItems(0);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   },
+  //   []
+  // );
+
   const fetchSignals = React.useCallback(
     async (pageIndex: number, pageSize: number, query?: string) => {
       setLoading(true);
@@ -165,7 +235,7 @@ export default function SignalsDataTable() {
         const res: any = await SignalService.getSignals(
           pageIndex + 1,
           pageSize,
-          query ?? ""
+          "" // backend ko empty query bhejenge, kyunki filter frontend me hoga
         );
         const items: any[] = res?.data ?? [];
 
@@ -187,6 +257,17 @@ export default function SignalsDataTable() {
         );
 
         let displayed: any[] = items;
+
+        // 🔍 local search filter (pairName + botName)
+        if (query) {
+          const q = query.toLowerCase();
+          displayed = displayed.filter(
+            (s: any) =>
+              s?.pairName?.toLowerCase().includes(q) ||
+              getBotName(s).toLowerCase().includes(q)
+          );
+        }
+
         const serverProvidedPagination = Boolean(
           res?.pagination ||
             typeof res?.totalPages !== "undefined" ||
@@ -194,17 +275,15 @@ export default function SignalsDataTable() {
         );
 
         if (!serverProvidedPagination) {
-          const pages = Math.max(1, Math.ceil(items.length / pageSize));
+          const pages = Math.max(1, Math.ceil(displayed.length / pageSize));
           const idx = Math.max(0, Math.min(pageIndex, pages - 1));
-          displayed = items.slice(idx * pageSize, (idx + 1) * pageSize);
+          displayed = displayed.slice(idx * pageSize, (idx + 1) * pageSize);
         } else {
-          if (items.length > pageSize) {
-            displayed = items.slice(
+          if (displayed.length > pageSize) {
+            displayed = displayed.slice(
               safePageIndex * pageSize,
               (safePageIndex + 1) * pageSize
             );
-          } else {
-            displayed = items;
           }
         }
 
