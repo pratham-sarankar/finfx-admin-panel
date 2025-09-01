@@ -59,45 +59,6 @@ function idFrom(raw: any): string {
   return "";
 }
 
-// function normalizeSignal(raw: RawSignal): Signal {
-//   const id = idFrom(raw);
-//   const userId =
-//     typeof raw.userId === "string"
-//       ? raw.userId
-//       : (raw.userId as any)?.$oid ?? (raw.userId as any)?.toString?.();
-//   const botId =
-//     typeof raw.botId === "string"
-//       ? raw.botId
-//       : (raw.botId as any)?.$oid ?? (raw.botId as any)?.toString?.();
-
-//   return {
-//     id: id || raw.id || "",
-//     userId,
-//     lotSize: raw.lotSize,
-//     stopLossPrice: raw.stopLossPrice,
-//     targetPrice: raw.targetPrice,
-//     botId,
-//     tradeId: raw.tradeId,
-//     direction:
-//       (raw.direction as any)?.toUpperCase?.() === "SHORT" ? "SHORT" : "LONG",
-//     signalTime: raw.signalTime ? String(raw.signalTime) : undefined,
-//     entryTime: raw.entryTime ? String(raw.entryTime) : undefined,
-//     entryPrice: raw.entryPrice,
-//     stoploss: raw.stoploss,
-//     target1r: raw.target1r,
-//     target2r: raw.target2r,
-//     exitTime: raw.exitTime ? String(raw.exitTime) : undefined,
-//     exitPrice: raw.exitPrice,
-//     exitReason: raw.exitReason,
-//     profitLoss: raw.profitLoss,
-//     profitLossR: raw.profitLossR,
-//     trailCount: raw.trailCount,
-//     pairName: raw.pairName,
-//     createdAt: raw.createdAt ? String((raw.createdAt as any)?.$date ?? raw.createdAt) : undefined,
-//     updatedAt: raw.updatedAt ? String((raw.updatedAt as any)?.$date ?? raw.updatedAt) : undefined,
-//   };
-// }
-
 function normalizeSignal(raw: RawSignal): Signal {
   const id = idFrom(raw);
 
