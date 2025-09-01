@@ -165,7 +165,7 @@ export default function SignalsDataTable() {
         const res: any = await SignalService.getSignals(
           pageIndex + 1,
           pageSize,
-          query ?? ""
+          "" // backend ko empty query bhejenge, kyunki filter frontend me hoga
         );
         const items: any[] = res?.data ?? [];
 
@@ -187,6 +187,17 @@ export default function SignalsDataTable() {
         );
 
         let displayed: any[] = items;
+
+        // 🔍 local search filter (pairName + botName)
+        if (query) {
+          const q = query.toLowerCase();
+          displayed = displayed.filter(
+            (s: any) =>
+              s?.pairName?.toLowerCase().includes(q) ||
+              getBotName(s).toLowerCase().includes(q)
+          );
+        }
+
         const serverProvidedPagination = Boolean(
           res?.pagination ||
             typeof res?.totalPages !== "undefined" ||
@@ -194,17 +205,15 @@ export default function SignalsDataTable() {
         );
 
         if (!serverProvidedPagination) {
-          const pages = Math.max(1, Math.ceil(items.length / pageSize));
+          const pages = Math.max(1, Math.ceil(displayed.length / pageSize));
           const idx = Math.max(0, Math.min(pageIndex, pages - 1));
-          displayed = items.slice(idx * pageSize, (idx + 1) * pageSize);
+          displayed = displayed.slice(idx * pageSize, (idx + 1) * pageSize);
         } else {
-          if (items.length > pageSize) {
-            displayed = items.slice(
+          if (displayed.length > pageSize) {
+            displayed = displayed.slice(
               safePageIndex * pageSize,
               (safePageIndex + 1) * pageSize
             );
-          } else {
-            displayed = items;
           }
         }
 
