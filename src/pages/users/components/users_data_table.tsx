@@ -23,6 +23,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -151,6 +152,20 @@ const createColumns = (
     accessorKey: "phoneNumber",
     header: "Phone Number",
     cell: ({ row }) => row.original.phoneNumber || "-",
+    enableHiding: false,
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Date of Registration",
+    cell: ({ row }) => {
+      const user = row.original as User;
+      if (!user.createdAt) return "-";
+      try {
+        return format(new Date(user.createdAt), "MMM dd, yyyy");
+      } catch {
+        return "-";
+      }
+    },
     enableHiding: false,
   },
   {
