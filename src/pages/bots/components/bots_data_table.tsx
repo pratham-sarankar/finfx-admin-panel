@@ -5,6 +5,7 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconCopy,
   IconDotsVertical,
   IconLoader,
   IconPlus,
@@ -80,7 +81,8 @@ const PERFORMANCE_OPTIONS = ["1D", "1W", "1M", "3M", "6M", "1Y", "ALL"];
 /* ----------------------------- Columns factory ---------------------------- */
 const createColumns = (
   onEdit: (b: Bot) => void,
-  onDelete: (b: Bot) => void
+  onDelete: (b: Bot) => void,
+  onCopyId: (b: Bot) => void
 ): ColumnDef<Bot>[] => [
   {
     id: "select",
@@ -171,6 +173,14 @@ const createColumns = (
               }}>
               <div className="flex items-center gap-2">
                 <IconPencil className="h-4 w-4" /> Edit
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                onCopyId(b);
+              }}>
+              <div className="flex items-center gap-2">
+                <IconCopy className="h-4 w-4" /> Copy ID
               </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -532,7 +542,7 @@ export function BotsDataTable() {
   }, []);
 
   const columns = React.useMemo(
-    () => createColumns(handleEdit, handleDelete),
+    () => createColumns(handleEdit, handleDelete, handleCopyId),
     []
   );
 
@@ -577,6 +587,16 @@ export function BotsDataTable() {
   function handleDelete(b: Bot) {
     setToDelete(b);
     setShowDeleteConfirm(true);
+  }
+
+  async function handleCopyId(b: Bot) {
+    try {
+      await navigator.clipboard.writeText(b.id);
+      toast.success("Bot ID copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+      toast.error("Failed to copy ID to clipboard");
+    }
   }
 
   async function confirmDelete() {
