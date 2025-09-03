@@ -61,57 +61,38 @@ function formatNumber(v: any) {
   return n.toFixed(2).replace(/\.?0+$/, "");
 }
 
-/* ---------------- columns (4 fixed columns) ---------------- */
+function formatDateTime(dateString: any) {
+  if (!dateString) return "-";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+  } catch {
+    return "-";
+  }
+}
+
+function getSignalStatus(signal: any): string {
+  if (signal.exitTime || signal.exitPrice) {
+    return "Closed";
+  }
+  return "Open";
+}
+
+function formatProfitLoss(pnl: any): string {
+  if (pnl === null || pnl === undefined || Number.isNaN(Number(pnl))) return "-";
+  const n = Number(pnl);
+  const formatted = formatNumber(n);
+  if (formatted === "-") return "-";
+  return n >= 0 ? `+${formatted}` : formatted;
+}
+
+/* ---------------- columns (9 columns in required order) ---------------- */
 const COL_MIN_WIDTH = 160; // px
 
 const COLUMNS = (): ColumnDef<Signal>[] => [
   {
-    accessorKey: "pairName",
-    header: () => (
-      <div
-        style={{ minWidth: COL_MIN_WIDTH }}
-        className="text-left whitespace-nowrap">
-        Pair
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
-        {row.original.pairName ?? "-"}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "entryPrice",
-    header: () => (
-      <div
-        style={{ minWidth: COL_MIN_WIDTH }}
-        className="text-left whitespace-nowrap">
-        Entry Price
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
-        {formatNumber((row.original as any).entryPrice)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "exitPrice",
-    header: () => (
-      <div
-        style={{ minWidth: COL_MIN_WIDTH }}
-        className="text-left whitespace-nowrap">
-        Exit Price
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
-        {formatNumber((row.original as any).exitPrice)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "botName", // ensure accessor is botName so table uses name (not id)
+    accessorKey: "botName", // 1. Bot Name
     header: () => (
       <div
         style={{ minWidth: COL_MIN_WIDTH }}
@@ -122,6 +103,126 @@ const COLUMNS = (): ColumnDef<Signal>[] => [
     cell: ({ row }) => (
       <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
         {row.original.botName || getBotName(row.original)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "pairName", // 2. Pair Name
+    header: () => (
+      <div
+        style={{ minWidth: COL_MIN_WIDTH }}
+        className="text-left whitespace-nowrap">
+        Pair Name
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
+        {row.original.pairName ?? "-"}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "direction", // 3. Direction
+    header: () => (
+      <div
+        style={{ minWidth: COL_MIN_WIDTH }}
+        className="text-left whitespace-nowrap">
+        Direction
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
+        {row.original.direction ?? "-"}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "entryTime", // 4. Entry Time
+    header: () => (
+      <div
+        style={{ minWidth: COL_MIN_WIDTH }}
+        className="text-left whitespace-nowrap">
+        Entry Time
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
+        {formatDateTime(row.original.entryTime)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "entryPrice", // 5. Entry Price
+    header: () => (
+      <div
+        style={{ minWidth: COL_MIN_WIDTH }}
+        className="text-left whitespace-nowrap">
+        Entry Price
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
+        {formatNumber(row.original.entryPrice)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "exitTime", // 6. Exit Time
+    header: () => (
+      <div
+        style={{ minWidth: COL_MIN_WIDTH }}
+        className="text-left whitespace-nowrap">
+        Exit Time
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
+        {formatDateTime(row.original.exitTime)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "exitPrice", // 7. Exit Price
+    header: () => (
+      <div
+        style={{ minWidth: COL_MIN_WIDTH }}
+        className="text-left whitespace-nowrap">
+        Exit Price
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
+        {formatNumber(row.original.exitPrice)}
+      </div>
+    ),
+  },
+  {
+    id: "status", // 8. Status
+    header: () => (
+      <div
+        style={{ minWidth: COL_MIN_WIDTH }}
+        className="text-left whitespace-nowrap">
+        Status
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
+        {getSignalStatus(row.original)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "profitLoss", // 9. P&L
+    header: () => (
+      <div
+        style={{ minWidth: COL_MIN_WIDTH }}
+        className="text-left whitespace-nowrap">
+        P&L
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div style={{ minWidth: COL_MIN_WIDTH }} className="whitespace-nowrap">
+        {formatProfitLoss(row.original.profitLoss)}
       </div>
     ),
   },
@@ -323,7 +424,7 @@ export default function SignalsDataTable() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={9} className="h-24 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <IconLoader className="h-4 w-4 animate-spin" /> Loading
                         signals...
@@ -345,7 +446,7 @@ export default function SignalsDataTable() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={9} className="h-24 text-center">
                       No signals found.
                     </TableCell>
                   </TableRow>
